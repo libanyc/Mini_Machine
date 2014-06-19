@@ -2,21 +2,21 @@
 % Résumé des fonctions du programme
 
 % 1.Le programme demande à l’utilisateur de lui fournir le fichier de déformation obtenue avec le logiciel 7D.
-% 2.Le programme demande à l’utilisateur de lui fournir le fichier machine obtenue avec le serveur libre ftp.
+% 2.Puis il lui demande de fournir le fichier machine obtenue avec le serveur libre ftp.
 % 3.Partie calculs
 % 4.Partie affichage
 
 
 % Ouverture du fichier 7d
 
-[Def]=uigetfile('*.mat*','Open your 7D File');						% Fichier des déformations issues du logiciel 7D est mis dans la variable Def.
+[Def]=uigetfile('*.mat*','Ouvrez votre fichier 7D');					% Fichier des déformations issues du logiciel 7D est mis dans la variable Def.
 
 load(Def);										% Les variables utilisées dans le fichier des déformations sont enregistrées dans Matlab.
 
 
 % Ouverture du fichier machine
 
-[Eff]=uigetfile('*.txt*','Open your Effort File');					% le fichier machine (données sur la force) est mis dans la variable matrice : Eff.
+[Eff]=uigetfile('*.txt*','Ouvrez votre fichier Effort');				% le fichier machine (données sur la force) est mis dans la variable matrice : Eff.
 fid=fopen(Eff,'r');									% On ouvre la matrice Eff et on là place dans la matrice fid en lecture seule.
 fid2=fopen('Effort_Essai.txt','w+');							% Création du fichier texte : Effort_Essai dans lequel on peut écrire.
  
@@ -24,90 +24,83 @@ fid2=fopen('Effort_Essai.txt','w+');							% Création du fichier texte : Effort_
 % Mise en forme des valeurs du fichier Effort
 % Suppression des zéros
 
-While [1;j] == 0
-	i+=1
-	j+=1
-	Effort_Essai.txt = [i;j]
-	Else:
+While Eff[1;j] == 0
+	 i+=1
+	 j+=1
+	 Effort_Essai.txt = Eff[i;j]
+	 Else:
 		break
 
 
-% Création du tableau dataforce (insertion des données machine dans un tableau)
+% Création du tableau dataforce (insertion des données machine dans une matrice)
 
-dataforce = importdata('Effort_Essai.txt');						% On importe essai de traction modifié dans la matrice dataforce.
+dataforce = importdata('Effort_Essai.txt');						% On importe Force_Essai dans la matrice dataforce.
 
 clear Eff; clear Def; 									% On supprime les variables Eff et Def
  
-
- 
-n=datatime(size(dataforce,1),1); 							% La variable n représente une matrice dont le nombre de ligne est égale à la taille de datatime (c’est-à-dire au nombre d’images), et possédant 1 colonne.
+n=dataforce(size(dataforce,1),1); 							% La variable n représente une matrice dont le nombre de ligne est égale à la taille de datatime (c’est-à-dire au nombre d’images), et possédant 1 colonne.
 
 
-
-(((((((((((((((((( % Identification de la striction
+% Identification de la striction
 
 datastrain=zeros(n,5); 									% On initialise la variable datastrain par une matrice de 5 colonnes et dont le nombre de lignes correspond à la taille de datatime. 
 
-Matdefo = zeros(n,size(elnmaxi001,2)); 							% On  initialise la variable toto par une matrice possédant n lignes et elnmaxi001 colonnes. Les elnmaxi00i sont des matrices réunissant les déformations pour chaque image.
+Matdefo = zeros(n,size(elnmaxi001,2)); 							% On  initialise la variable Matdefo par une matrice possédant n lignes et elnmaxi001 colonnes. 
+for i=dataforce(1,1):n									% Les elnmaxi00i sont des matrices réunissant les déformations pour chaque image			
  
-for i=datatime(1,1):n
-    toto(i,:) = nanmean(eval(['elnmaxi' sprintf('%0*d',3,i)]));
+    Moydefo1(i,:) = nanmean(eval(['elnmaxi' sprintf('%0*d',3,i)]));			%  elnmaxi est la matrice des déformations logarithmiques longitudinales maximales pour chaque noeud.
  end
 
-toto2 = nanmean(toto); 									% Moyenne de la moyenne.
-[~, colonne_striction] = max(toto2); 							% Indique la position de la section max
+Moydefo2 = nanmean(Moydefo1); 								% Moyenne de la moyenne.
+[~, colonne_striction] = max(Moydefo2); 						% Indique la position de la section max
  
-for i=datatime(1,1):n
-    toto = eval(['elnmaxi' sprintf('%0*d',3,i)]);
-    m = colonne_striction;
-    o = colonne_striction;
+for i=dataforce(1,1):n
+    Moydefo1 = eval(['elnmaxi' sprintf('%0*d',3,i)]);
+    m = colonne_striction;								% La boucle while avec les variables m et o servent à supprimer les valeurs avant et après la striction et de garder les valeurs de la striction dans la 
+    o = colonne_striction;								  5ème colonne de datastrain appelée 'element'
  
     while m~=1
-        toto(:,1)=[];
+        Moydefo1(:,1)=[];
         m=m-1;
         o=o-1;
     end
-    											% Ajustement des matrices
-    q=size(toto,2);
+    											
+    q=size(Moydefo1,2);
     while q~=o
-        toto(:,q)=[];
+        Moydefo1(:,q)=[];
         q=q-1;
     end
-    datastrain(i,5) = nanmean(nanmean(toto)); 						% On place les deformations de la stricition dans la 5ème colonne de datatsrain que l’on nommera ‘element’
+    datastrain(i,5) = nanmean(nanmean(Moydefo1)); 					% On place les deformations de la stricition dans la 5ème colonne de datatsrain que l’on nommera ‘element’
 											
 end
-clear m, clear o; clear toto, clear toto2; clear fid; clear fid2;)))))))))))))))))))))))))))
+clear m, clear o; clear Moydefo1, clear Moydefo2; clear fid; clear fid2;
  
 
-% Création de datastrain (titre des colonnes…)
+% Mise en forme de datastrain (titre des colonnes…)
 
-for i=datatime(1,1):n
+for i=dataforce(1,1):n
     datastrain(i,1) = nanmean(nanmean(eval(['dx' sprintf('%0*d',3,i)])));
     datastrain(i,2) = nanmean(nanmean(eval(['dy' sprintf('%0*d',3,i)])));
     datastrain(i,3) = nanmean(nanmean(eval(['elnmini' sprintf('%0*d',3,i)])));
     datastrain(i,4) = nanmean(nanmean(eval(['elnmaxi' sprintf('%0*d',3,i)])));
 end
-for i=1:datatime(1,1)-1
+
+for i=1:dataforce(1,1)-1
     datastrain(1,:)=[];
 end
  
  
 % Extraction des données
  
-force = interp1(dataforce(:,1),dataforce(:,2));
-contrainte = interp1(dataforce(:,1),dataforce(:,3));
-contraintev = interp1(dataforce(:,1),dataforce(:,4));
-deformation = interp1(dataforce(:,1),dataforce(:,5));
-deformationv = interp1(dataforce(:,1),dataforce(:,6);
-deplacement = interp1(dataforce(:,1),dataforce(:,7));
-elnmini = datastrain(:,3);
+
+elnmini = datastrain(:,3);								% elnmini est la déformation logarithmique longitudinale minimale pour chaque noeud
 elnmaxi = datastrain(:,4);
 element = datastrain(:,5);
 
 
-% Interpolation des variables pour les synchroniser et création de nouvelles variables utiles
+% Ajustement des variables de déformation et création des variables de contraintes 
  
-a = elnmini(1,1);
+a = elnmini(1,1);									% Recalage du déphasage
 b = elnmaxi(1,1);
 c = element(1,1);
  
@@ -118,11 +111,11 @@ for i=1:size(elnmaxi,1)
 end
 clear a; clear b; clear c;
  
-contraintev(1,1)=0;
-deformationv(1,1)=0;
+contraintev(1,1)=0;									% contraintev est la contrainte donnée par la machine
+deformationv(1,1)=0;									% deformationv est la déformation donnée par la machine
  
-contraintev_AN = zeros(1,1);
-contraintev_AN_element = zeros(1,1);
+contraintev_AN = zeros(1,1);								% contraintev_AN est la Contrainte recalculée sur l'éprouvette
+contraintev_AN_element = zeros(1,1);							% contraintev_AN_element est la Contrainte recaluclée dans la striction
  
 for i=1:size(contrainte,1)
     contraintev_AN(i,1) = contrainte(i,1)*exp(elnmaxi(i,1));
@@ -142,7 +135,7 @@ contraintev_AN(1,1)=0;
 
 Epsilon_max = element(indice_contrainte,1);
 Rapport_LeRoy = zeros(size(contraintev_AN_element,1),1);
-contraintev_LeRoy = zeros(size(contraintev_AN_element,1),1);
+contraintev_LeRoy = zeros(size(contraintev_AN_element,1),1);				% contraintev_LeRoy est la Contrainte recalculée dans la striction + application de la correction
  
 for i=(indice_contrainte+1):size(contraintev_AN_element,1)
     Rapport_LeRoy(i,:) = 1.1*((element(i,:)-Epsilon_max));
@@ -161,33 +154,31 @@ end
  
 	% Création des variables dynamiques
 
-eval(['force' int2str(z) '=force']);
-eval(['contrainte' int2str(z) '=contrainte']);
-eval(['contraintev_AN' int2str(z) '=contraintev_AN']);
-eval(['contraintev_AN_element' int2str(z) '=contraintev_AN_element']);
-eval(['contraintev_LeRoy' int2str(z) '=contraintev_LeRoy']);
-eval(['deplacement' int2str(z) '=deplacement']);
-eval(['deformationv' int2str(z) '=deformationv']);
-eval(['elnmaxi' int2str(z) '=elnmaxi']);
-eval(['element' int2str(z) '=element']);
-eval(['elnepaisseur' int2str(z) '=elnepaisseur']);
-eval(['elnminip' int2str(z) '=elnminip']);
- 
+									
+eval(['contrainte']);									
+eval(['contraintev_AN']);								
+eval(['contraintev_AN_element']);							
+eval(['contraintev_LeRoy']);																	
+eval(['deformationv']);									
+eval(['elnmaxi']);									
+eval(['element']);									
+eval(['elnepaisseur']);									
+eval(['elnminip');									
+
 
 	% Suppression des variables tampons
 
-clear contrainte; clear contraintev; clear contraintev_AN; clear contraintev_AN_element; clear contraintev_LeRoy; clear colonne_striction; clear dataforce; 
-clear datatime; clear datastrain; clear deplacement, clear deformation; clear deformationv; clear elnmini; clear elnmaxi; clear element; clear elnepaisseur; 
-clear elnminip; clear force; clear i; clear indice_contrainte; clear j; clear l_1; clear l_2; clear line; clear n;
-clear nb_courbes; clear nb_force; clear temp; clear time; clear Epsilon_max; clear Rapport_LeRoy;
+clear contrainte; clear contraintev; clear contraintev_AN; clear contraintev_AN_element; clear contraintev_LeRoy; clear colonne_striction; clear dataforce; clear datastrain; clear deformation; clear deformationv; clear elnmini; clear elnmaxi; clear element; clear elnepaisseur; 
+clear elnmini; clear force; clear i; clear indice_contrainte; clear j; clear line; clear n;
+clear time; clear Epsilon_max; clear Rapport_LeRoy;
  
  
 	% Affichage des courbes 
 
 figure(1), hold on, grid on, box on
-plot(elnmaxi1, contraintev_AN1,'k','LineWidth',2)
-xlabel('\fontsize{24}\bfTrue strain (mm/mm)')
-ylabel('\fontsize{24}\bfCauchy stress (MPa)')
+plot(elnmaxi, contraintev_AN,'k','LineWidth',2)
+xlabel('\fontsize{24}\Deformations (mm/mm)')
+ylabel('\fontsize{24}\Contraintes (MPa)')
 set(gca, 'FontSize', 22, 'fontName','Times')
 xlim([0 0.09])
 ylim([0 800])
